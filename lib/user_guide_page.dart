@@ -5,15 +5,17 @@ class UserGuidePage extends StatefulWidget {
   _UserGuidePageState createState() => _UserGuidePageState();
 }
 
-class _UserGuidePageState extends State<UserGuidePage> {
+class _UserGuidePageState extends State<UserGuidePage>
+    with SingleTickerProviderStateMixin {
   final Color primaryOrange = Colors.orange[800]!;
   final Color accentOrange = Colors.orange[50]!;
-  int _selectedSection = 0;
+  late TabController _tabController;
 
   final List<GuideSection> _sections = [
     GuideSection(
       title: "Mulai Konsultasi",
       icon: Icons.medical_services_rounded,
+      color: Color(0xFFFF6B6B),
       steps: [
         GuideStep(
           stepNumber: 1,
@@ -48,6 +50,7 @@ class _UserGuidePageState extends State<UserGuidePage> {
     GuideSection(
       title: "Deskripsi Penyakit",
       icon: Icons.menu_book_rounded,
+      color: Color(0xFF4ECDC4),
       steps: [
         GuideStep(
           stepNumber: 1,
@@ -58,16 +61,16 @@ class _UserGuidePageState extends State<UserGuidePage> {
         ),
         GuideStep(
           stepNumber: 2,
-          title: "Pilih Penyakit",
+          title: "Cari atau Pilih Penyakit",
           description:
-              "Pilih penyakit yang ingin Anda pelajari untuk melihat informasi detail.",
+              "Gunakan search bar untuk mencari penyakit tertentu, atau scroll untuk melihat semua penyakit yang tersedia.",
           icon: Icons.search_rounded,
         ),
         GuideStep(
           stepNumber: 3,
           title: "Pelajari Detail",
           description:
-              "Baca informasi lengkap tentang gejala, penyebab, dan cara penanganan penyakit tersebut.",
+              "Tap pada card penyakit untuk melihat informasi lengkap tentang definisi, gejala terkait, dan cara penanganan.",
           icon: Icons.info_rounded,
         ),
       ],
@@ -75,6 +78,7 @@ class _UserGuidePageState extends State<UserGuidePage> {
     GuideSection(
       title: "Hubungi Pakar",
       icon: Icons.support_agent_rounded,
+      color: Color(0xFF95E1D3),
       steps: [
         GuideStep(
           stepNumber: 1,
@@ -102,6 +106,7 @@ class _UserGuidePageState extends State<UserGuidePage> {
     GuideSection(
       title: "Tips Perawatan",
       icon: Icons.lightbulb_rounded,
+      color: Color(0xFFFECA57),
       steps: [
         GuideStep(
           stepNumber: 1,
@@ -129,9 +134,21 @@ class _UserGuidePageState extends State<UserGuidePage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _sections.length, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: primaryOrange,
         elevation: 0,
@@ -143,130 +160,112 @@ class _UserGuidePageState extends State<UserGuidePage> {
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-      ),
-      body: Row(
-        children: [
-          // Sidebar untuk memilih section
-          Container(
-            width: 120,
-            decoration: BoxDecoration(
-              color: accentOrange,
-              border: Border(
-                right: BorderSide(color: Colors.orange[200]!, width: 1),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(60),
+          child: Container(
+            color: primaryOrange,
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              indicatorColor: Colors.white,
+              indicatorWeight: 3,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.6),
+              labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              unselectedLabelStyle: TextStyle(
+                fontWeight: FontWeight.normal,
+                fontSize: 13,
               ),
-            ),
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              itemCount: _sections.length,
-              itemBuilder: (context, index) {
-                final section = _sections[index];
-                final isSelected = _selectedSection == index;
-                return _buildSidebarItem(section, index, isSelected);
-              },
+              tabs: _sections.map((section) {
+                return Tab(
+                  icon: Icon(section.icon, size: 22),
+                  text: section.title,
+                );
+              }).toList(),
             ),
           ),
-
-          // Content area
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: Duration(milliseconds: 300),
-              child: _buildSectionContent(_sections[_selectedSection]),
-            ),
-          ),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildSidebarItem(GuideSection section, int index, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedSection = index;
-        });
-      },
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        padding: EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? primaryOrange : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              section.icon,
-              color: isSelected ? Colors.white : primaryOrange,
-              size: 28,
-            ),
-            SizedBox(height: 8),
-            Text(
-              section.title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.white : Colors.grey[700],
-              ),
-            ),
-          ],
-        ),
+      body: TabBarView(
+        controller: _tabController,
+        children: _sections.map((section) {
+          return _buildSectionContent(section);
+        }).toList(),
       ),
     );
   }
 
   Widget _buildSectionContent(GuideSection section) {
     return SingleChildScrollView(
-      key: ValueKey(_selectedSection),
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: accentOrange,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(section.icon, color: primaryOrange, size: 32),
+          // Section Header Card
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  section.color.withOpacity(0.15),
+                  section.color.withOpacity(0.05),
+                ],
               ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      section.title,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: section.color.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: section.color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(section.icon, color: section.color, size: 32),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        section.title,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Panduan langkah demi langkah',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
+                      SizedBox(height: 4),
+                      Text(
+                        '${section.steps.length} langkah mudah',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          SizedBox(height: 32),
+          SizedBox(height: 24),
 
           // Steps
           ...section.steps.asMap().entries.map((entry) {
             final step = entry.value;
             final isLast = entry.key == section.steps.length - 1;
-            return _buildStepCard(step, isLast);
+            return _buildStepCard(step, section.color, isLast);
           }).toList(),
 
+          SizedBox(height: 16),
+
           // Bottom tip
-          SizedBox(height: 24),
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -275,45 +274,51 @@ class _UserGuidePageState extends State<UserGuidePage> {
               border: Border.all(color: Colors.blue[200]!, width: 1),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
                   Icons.tips_and_updates_rounded,
                   color: Colors.blue[700],
-                  size: 24,
+                  size: 22,
                 ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Tips: Gunakan fitur ini secara berkala untuk memantau kesehatan kucing Anda!',
-                    style: TextStyle(fontSize: 13, color: Colors.blue[900]),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.blue[900],
+                      height: 1.4,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+          SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildStepCard(GuideStep step, bool isLast) {
+  Widget _buildStepCard(GuideStep step, Color color, bool isLast) {
     return Container(
       margin: EdgeInsets.only(bottom: isLast ? 0 : 20),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Step number indicator
+          // Step number indicator with connecting line
           Column(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: primaryOrange,
+                  color: color,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: primaryOrange.withOpacity(0.3),
+                      color: color.withOpacity(0.3),
                       blurRadius: 8,
                       offset: Offset(0, 4),
                     ),
@@ -325,7 +330,7 @@ class _UserGuidePageState extends State<UserGuidePage> {
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -333,19 +338,19 @@ class _UserGuidePageState extends State<UserGuidePage> {
               if (!isLast)
                 Container(
                   width: 2,
-                  height: 60,
-                  margin: EdgeInsets.symmetric(vertical: 8),
+                  height: 50,
+                  margin: EdgeInsets.symmetric(vertical: 6),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [primaryOrange, primaryOrange.withOpacity(0.3)],
+                      colors: [color, color.withOpacity(0.3)],
                     ),
                   ),
                 ),
             ],
           ),
-          SizedBox(width: 16),
+          SizedBox(width: 12),
 
           // Step content
           Expanded(
@@ -357,45 +362,45 @@ class _UserGuidePageState extends State<UserGuidePage> {
                 border: Border.all(color: Colors.grey[200]!, width: 1),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withOpacity(0.08),
                     blurRadius: 8,
                     offset: Offset(0, 2),
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: accentOrange,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(step.icon, color: primaryOrange, size: 24),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(step.icon, color: color, size: 20),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
                           step.title,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[800],
                           ),
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          step.description,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    step.description,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      height: 1.5,
                     ),
                   ),
                 ],
@@ -412,9 +417,15 @@ class _UserGuidePageState extends State<UserGuidePage> {
 class GuideSection {
   final String title;
   final IconData icon;
+  final Color color;
   final List<GuideStep> steps;
 
-  GuideSection({required this.title, required this.icon, required this.steps});
+  GuideSection({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.steps,
+  });
 }
 
 class GuideStep {
